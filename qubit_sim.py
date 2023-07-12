@@ -8,16 +8,20 @@ from labellines import labelLine, labelLines
 class Qbsimulator:
     def __init__(self, qubit):
         self.qubit = qubit
+        self.flux = np.linspace(-0.5, 0.5, 101)
+        self.parameter = "flux"
+        self.operator = "n_operator"
         pass
 
         
     def plot_spectrum(self, parameter:str='flux', param_vals:np.ndarray=np.linspace(-0.5, 0.5, 101), evals_count:int=5, subtract_ground:bool=False):
-        """This function is used for plotting energy spectrum versus parameter like external flux, gate charge,etc.
+        """This function is used for plotting energy spectrum versus parameter, flux. Only support transmon & fluxonium now. Cause has not write 
+        axis label about other variable.     
 
         Parameters
         ----------
         patameter:
-            name of parameter to be varied. Only support transmon & fluxonium now.
+            name of parameter to be varied. Only support flux now
         patameter_list:
             parameter value
         evals_count:
@@ -60,7 +64,17 @@ class Qbsimulator:
 
 
 
-    def plot_matrix_table(self, parameter:str='n_operator', evals_count:int=5, subtract_ground:bool=False):
+    def plot_matrix_table(self, parameter:str='n_operator', evals_count:int=5):
+        """This function is used for plotting matrix elemenet table. 
+
+        Parameters
+        ----------
+        patameter:
+            project to which operator basis. "n_operator" |N><N| is commonly used.
+        evals_count:
+            energy level want to calculate
+        """
+
         matrix = self.qubit.matrixelement_table(parameter, evals_count=6)
 
         fig = plt.figure(figsize=(6,6))
@@ -100,6 +114,20 @@ class Qbsimulator:
 
 
     def plot_matelements(self, operator:str='n_operator', param_name:str='flux', param_vals:np.ndarray=np.linspace(0, 1, 101), evals_count:int=5):
+            """This function is using for plotting matrix element various with variable
+
+            Parameters
+            ----------
+            patameter:
+                name of parameter to be varied. Only support flux now
+            patameter_list:
+                parameter value
+            evals_count:
+                energy level want to calculate
+            substract_ground:
+                if True, eigenvalues are returned relative to the ground state eigenvalue
+                (default value = False)
+            """
             matrix = self.qubit.get_matelements_vs_paramvals(operator, param_name, param_vals, evals_count).matrixelem_table
             
             
@@ -182,5 +210,6 @@ if __name__=="__main__":
         )
     a = Qbsimulator(transmon)
     # a.plot_spectrum(param_vals=np.linspace(0,0.4))
-    a.plot_matelements()
+    # a.plot_matelements()
     # a.plot_matrix_table()
+    help(Qbsimulator.plot_matelements)
