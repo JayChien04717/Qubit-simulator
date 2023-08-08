@@ -113,7 +113,7 @@ class Qbsimulator:
 
 
 
-    def plot_matelements(self, operator:str='n_operator', param_name:str='flux', param_vals:np.ndarray=np.linspace(0, 1, 101), evals_count:int=5):
+    def plot_matelements(self, operator:str='n_operator', param_name:str='flux', param_vals:np.ndarray=np.linspace(-0.5, 0.5, 101), evals_count:int=5):
             """This function is using for plotting matrix element various with variable
 
             Parameters
@@ -136,6 +136,7 @@ class Qbsimulator:
                 (row, col) for row in range(row) for col in range(row + 1)
             ]
             fig, axes = plt.subplots()
+
             for row, col in index_pairs:
                 y_vals = np.abs(matrix[:, row, col])
                 axes.plot(
@@ -146,58 +147,53 @@ class Qbsimulator:
 
             plt.xlabel(r"${\phi_{ext}}$", fontsize=15)
             plt.ylabel("matrix element", fontsize=15)
-
             labelLines(plt.gca().get_lines(), align=True, fontsize=11)
             plt.show()
             pass
             
 
 
-    def measure_spectrum(qubit, parameter:str='flux', param_vals:np.ndarray=np.linspace(-0.5, 0.5, 101), evals_count:int=5):
-        energy = qubit.get_spectrum_vs_paramvals(parameter, param_vals, evals_count, subtract_ground=False).energy_table
+    def measure_spectrum(self, parameter:str='flux', param_vals:np.ndarray=np.linspace(-0.5, 0.5, 101), evals_count:int=5): # now parameter_vals only support flux
+        """
+        # now parameter_vals only support flux
+
+        Parameters
+        ----------
+        patameter:
+            name of parameter to be varied. Only support flux now
+        patameter_list:
+            parameter value
+        evals_count:
+            energy level want to calculate
+        substract_ground:
+            if True, eigenvalues are returned relative to the ground state eigenvalue
+            (default value = False)
+        """
+        energy = self.qubit.get_spectrum_vs_paramvals(parameter, param_vals, evals_count, subtract_ground=False).energy_table
         #X-axis=flux point, Y-axis=energy point
+        matrix = self.qubit.get_matelements_vs_paramvals('n_operator', parameter, param_vals, evals_count).matrixelem_table
+        # NxN matrix
 
-
-        trans_pair = [
-        (m, n) for m in range(evals_count) for n in range(m+1)
-        ]
+        
+        trans_pair = [(m, n) for m in range(evals_count) for n in range(m+1)] #[(0,0),(1,0),(1,1).....]
         evals_count = (evals_count**2+evals_count)/2 #fix the trans_pair number which is create by double for loop.修正pair產生組合數-->finish
         
         for i in range(int(evals_count)):
             if trans_pair[i][1] == trans_pair[i][0]:
                 pass
             else:
-                plt.plot(param_vals, energy[:,trans_pair[i][0]]-energy[:,trans_pair[i][1]], label=f'{trans_pair[i][0]},{trans_pair[i][1]}')
+                data = (energy[:,trans_pair[i][0]]-energy[:,trans_pair[i][1]])*np.abs(matrix[:,trans_pair[i][0],trans_pair[i][1]])
+                plt.plot(param_vals, data, label=f'{trans_pair[i][0]},{trans_pair[i][1]}')
             # plt.plot(parameter_list, energy[:,i], label=f"eigenstate{i}")
         plt.xlabel(r"${\phi_{ext}}$", fontsize=15)
         plt.ylabel("Frequency(GHz)", fontsize=15)
         plt.title("Transistion spectrum", fontsize=15)
         labelLines(plt.gca().get_lines(), align=True, fontsize=11)
 
-
-
-        matrix = qubit.get_matelements_vs_paramvals('n_operator', parameter, param_vals, evals_count).matrixelem_table
-        
-        
-        (row, col) = matrix[0,:,:].shape
-        index_pairs = [
-            (row, col) for row in range(row) for col in range(row + 1)
-        ]
-        fig, axes = plt.subplots()
-        for row, col in index_pairs:
-            y_vals = np.abs(matrix[:, row, col])
-            axes.plot(
-                param_vals,
-                y_vals,
-                label=f"{row},{col}",
-            )
-
-        plt.xlabel(r"${\phi_{ext}}$", fontsize=15)
-        plt.ylabel("matrix element", fontsize=15)
-
-        labelLines(plt.gca().get_lines(), align=True, fontsize=11)
         plt.show()
         pass
+        return energy, matrix
+
 
 if __name__=="__main__":
     transmon = scq.TunableTransmon(
@@ -209,7 +205,12 @@ if __name__=="__main__":
         ncut=30
         )
     a = Qbsimulator(transmon)
-    # a.plot_spectrum(param_vals=np.linspace(0,0.4))
-    # a.plot_matelements()
+    # a.plot_spectrum()
+    #a.plot_matelements()
     # a.plot_matrix_table()
-    help(Qbsimulator.plot_matelements)
+    energy, matrix = a.measure_spectrum()
+    # help(Qbsimulator.plot_matelements)
+    evals_count=5
+    trans_pair = [(m, n) for m in range(evals_count) for n in range(m+1)] #[(0,0),(1,0),(1,1).....]
+    evals_count = (evals_count**2+evals_count)/2 #fix the trans_pair number which is create by double for loop.修正pair產生組合數-->finish
+
